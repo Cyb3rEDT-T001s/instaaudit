@@ -129,9 +129,13 @@ func runAudit(cmd *cobra.Command, args []string) {
 	}
 
 	// Create beginner guide
-	fmt.Println("📚 Generating educational report for beginners...")
+	fmt.Println("📚 Generating educational reports for beginners...")
 	if err := report.GenerateEducationalReport(auditReport, cfg.OutputPath); err != nil {
 		log.Printf("Warning: Could not generate educational report: %v", err)
+	} else {
+		fmt.Printf("📖 Educational reports created:\n")
+		fmt.Printf("   • %s_educational.html (visual guide)\n", cfg.OutputPath)
+		fmt.Printf("   • %s_educational.txt (simple text)\n", cfg.OutputPath)
 	}
 
 	// Show summary
@@ -212,29 +216,25 @@ func printExecutiveSummary(auditReport *report.Report) {
 	fmt.Printf("   • Subdomains Found: %d\n", auditReport.Summary.SubdomainsFound)
 
 	fmt.Println("\n🚨 SECURITY FINDINGS:")
-	fmt.Printf("   • Vulnerabilities: %d\n", auditReport.Summary.Vulnerabilities)
-	fmt.Printf("   • Exploitable Services: %d\n", auditReport.Summary.ExploitableServices)
+	fmt.Printf("   • Critical Issues: %d\n", auditReport.Summary.CriticalIssues)
+	fmt.Printf("   • High Risk Issues: %d\n", auditReport.Summary.HighRiskIssues)
+	fmt.Printf("   • Medium Risk Issues: %d\n", auditReport.Summary.MediumRiskIssues)
+	fmt.Printf("   • Low Risk Issues: %d\n", auditReport.Summary.LowRiskIssues)
+	fmt.Printf("   • Total Vulnerabilities: %d\n", auditReport.Summary.Vulnerabilities)
 	fmt.Printf("   • Database Issues: %d\n", auditReport.Summary.DatabaseIssues)
 	fmt.Printf("   • Web App Issues: %d\n", auditReport.Summary.WebAppIssues)
 	fmt.Printf("   • System Issues: %d\n", auditReport.Summary.SystemIssues)
-	fmt.Printf("   • Misconfigurations: %d\n", auditReport.Summary.Misconfigurations)
 
-	// Critical issues
-	if auditReport.Summary.RiskLevel == "Critical" || auditReport.Summary.RiskLevel == "High" {
-		fmt.Println("\n⚠️  CRITICAL ISSUES DETECTED:")
-		
-		// Database problems
-		for _, db := range auditReport.AuditResult.DatabaseResults {
-			if db.Accessible && (db.Severity == "Critical" || db.Severity == "High") {
-				fmt.Printf("   🔴 %s database accessible on port %d\n", db.Service, db.Port)
+	// Show detailed risk information
+	if len(auditReport.Summary.RiskDetails) > 0 {
+		fmt.Println("\n⚠️  DETAILED SECURITY ISSUES:")
+		for i, detail := range auditReport.Summary.RiskDetails {
+			if i < 10 { // Show first 10 issues
+				fmt.Printf("   🔴 %s\n", detail)
 			}
 		}
-		
-		// Exploit results
-		for _, exploit := range auditReport.AuditResult.ExploitResults {
-			if exploit.Success && (exploit.Severity == "Critical" || exploit.Severity == "High") {
-				fmt.Printf("   🔴 %s vulnerability on port %d\n", exploit.ExploitName, exploit.Port)
-			}
+		if len(auditReport.Summary.RiskDetails) > 10 {
+			fmt.Printf("   ... and %d more issues (see detailed report)\n", len(auditReport.Summary.RiskDetails)-10)
 		}
 	}
 

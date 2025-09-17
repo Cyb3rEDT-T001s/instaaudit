@@ -51,6 +51,28 @@ Think of ports like doors on a building:
 - Easy for hackers to exploit
 - Fix within 24 hours
 
+## 🚀 Quick Verification Scripts
+
+### **Automated Cross-Verification:**
+
+**Linux/macOS:**
+```bash
+chmod +x verify-results.sh
+./verify-results.sh target.com audit_report.json
+```
+
+**Windows:**
+```cmd
+verify-results.bat target.com audit_report.json
+```
+
+These scripts automatically:
+- ✅ Cross-check ports with Nmap
+- ✅ Verify web services with Curl
+- ✅ Test database accessibility
+- ✅ Check SSL certificates
+- ✅ Compare with InstaAudit findings
+
 ## 🔬 For Experts: Cross-Checking Results
 
 ### 📊 Manual Verification Commands

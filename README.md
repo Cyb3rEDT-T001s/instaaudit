@@ -67,8 +67,13 @@ chmod +x install-termux.sh
 ```bash
 git clone https://github.com/Cyb3rEDT-T001s/instaaudit.git
 cd instaaudit
+
+# Build Docker image
 chmod +x docker-build.sh
 ./docker-build.sh
+
+# Or use Docker Compose
+docker-compose build
 ```
 
 ### 🎯 Usage Examples

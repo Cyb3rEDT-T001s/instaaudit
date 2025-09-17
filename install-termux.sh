@@ -45,22 +45,30 @@ go build -o instaaudit cmd/main.go
 # Make executable
 chmod +x instaaudit
 
-# Create symlink for global access
-mkdir -p $HOME/.local/bin
-cp instaaudit $HOME/.local/bin/
-echo 'export PATH=$PATH:$HOME/.local/bin' >> ~/.bashrc
+# Install to Termux bin directory for global access
+echo "Installing to system PATH..."
+cp instaaudit $PREFIX/bin/
+echo "InstaAudit installed to $PREFIX/bin/"
 
 echo ""
 echo "Installation complete!"
 echo ""
-echo "To run InstaAudit:"
-echo "  ./instaaudit --help"
+echo "🎯 How to run InstaAudit in Termux:"
 echo ""
-echo "Or from anywhere:"
-echo "  source ~/.bashrc"
+echo "Method 1 (Recommended - Global command):"
 echo "  instaaudit --help"
+echo "  instaaudit -H 192.168.1.1 -p common"
 echo ""
-echo "Example usage:"
-echo "  ./instaaudit -H 192.168.1.1 -p common"
+echo "Method 2 (If global doesn't work):"
+echo "  \$(pwd)/instaaudit --help"
+echo "  bash -c \"./instaaudit -H target.com -p 80,443\""
 echo ""
-echo "Note: Some features may be limited on Android/Termux"
+echo "Method 3 (Full path):"
+echo "  $HOME/instaaudit/instaaudit --help"
+echo ""
+echo "🔧 Troubleshooting:"
+echo "- If './instaaudit' doesn't work, use 'instaaudit' directly"
+echo "- If permission denied, run: chmod +x instaaudit"
+echo "- If command not found, use full path or \$(pwd)/instaaudit"
+echo ""
+echo "Note: Some network features may be limited on Android/Termux"

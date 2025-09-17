@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  instaaudit:
+    build: .
+    image: instaaudit:latest
+    container_name: instaaudit-scanner
+    
+    # Network configuration
+    network_mode: host  # Required for network scanning
+    
+    # Volume mounts
+    volumes:
+      - ./reports:/home/instaaudit/reports
+      - ./config:/home/instaaudit/config:ro
+    
+    # Environment variables
+    environment:
+      - INSTAAUDIT_CONFIG=/home/instaaudit/config/config.json
+    
+    # Default command (override with docker-compose run)
+    command: ["--help"]
+    
+    # Security settings
+    user: instaaudit
+    read_only: true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.5'
+
+  # Web interface service (for future development)
+  instaaudit-web:
+    build: .
+    image: instaaudit:latest
+    container_name: instaaudit-web
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./reports:/home/instaaudit/reports:ro
+    command: ["--web", "--port", "8080"]
+    profiles:
+      - web  # Only start with --profile web

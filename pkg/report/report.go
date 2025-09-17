@@ -22,18 +22,23 @@ type Report struct {
 
 // Summary provides a high-level overview of the audit
 type Summary struct {
-	TotalPorts         int    `json:"total_ports_scanned"`
-	OpenPorts          int    `json:"open_ports"`
-	ServicesFound      int    `json:"services_found"`
-	Vulnerabilities    int    `json:"vulnerabilities_found"`
-	Misconfigurations  int    `json:"misconfigurations_found"`
-	ExploitableServices int   `json:"exploitable_services"`
-	SubdomainsFound    int    `json:"subdomains_found"`
-	TechnologiesFound  int    `json:"technologies_found"`
-	DatabaseIssues     int    `json:"database_issues"`
-	WebAppIssues       int    `json:"webapp_issues"`
-	SystemIssues       int    `json:"system_issues"`
-	RiskLevel          string `json:"risk_level"`
+	TotalPorts         int      `json:"total_ports_scanned"`
+	OpenPorts          int      `json:"open_ports"`
+	ServicesFound      int      `json:"services_found"`
+	Vulnerabilities    int      `json:"vulnerabilities_found"`
+	Misconfigurations  int      `json:"misconfigurations_found"`
+	ExploitableServices int     `json:"exploitable_services"`
+	SubdomainsFound    int      `json:"subdomains_found"`
+	TechnologiesFound  int      `json:"technologies_found"`
+	DatabaseIssues     int      `json:"database_issues"`
+	WebAppIssues       int      `json:"webapp_issues"`
+	SystemIssues       int      `json:"system_issues"`
+	RiskLevel          string   `json:"risk_level"`
+	CriticalIssues     int      `json:"critical_issues"`
+	HighRiskIssues     int      `json:"high_risk_issues"`
+	MediumRiskIssues   int      `json:"medium_risk_issues"`
+	LowRiskIssues      int      `json:"low_risk_issues"`
+	RiskDetails        []string `json:"risk_details"`
 }
 
 // GenerateReport creates a comprehensive report
@@ -76,6 +81,9 @@ func GenerateReport(scanResult *scanner.ScanResult, auditResult *auditor.AuditRe
 		}
 	}
 
+	// Get detailed risk analysis
+	riskAnalysis := calculateDetailedRisk(auditResult)
+
 	summary := &Summary{
 		TotalPorts:         len(scanResult.Results),
 		OpenPorts:          len(scanResult.OpenPorts),
@@ -88,7 +96,12 @@ func GenerateReport(scanResult *scanner.ScanResult, auditResult *auditor.AuditRe
 		DatabaseIssues:     dbIssues,
 		WebAppIssues:       webIssues,
 		SystemIssues:       sysIssues,
-		RiskLevel:          calculateRiskLevel(auditResult),
+		RiskLevel:          riskAnalysis.RiskLevel,
+		CriticalIssues:     riskAnalysis.CriticalCount,
+		HighRiskIssues:     riskAnalysis.HighCount,
+		MediumRiskIssues:   riskAnalysis.MediumCount,
+		LowRiskIssues:      riskAnalysis.LowCount,
+		RiskDetails:        riskAnalysis.Details,
 	}
 
 	return &Report{
@@ -99,20 +112,41 @@ func GenerateReport(scanResult *scanner.ScanResult, auditResult *auditor.AuditRe
 	}
 }
 
-// calculateRiskLevel determines the overall risk level
+// RiskAnalysis contains detailed risk breakdown
+type RiskAnalysis struct {
+	CriticalCount int      `json:"critical_count"`
+	HighCount     int      `json:"high_count"`
+	MediumCount   int      `json:"medium_count"`
+	LowCount      int      `json:"low_count"`
+	Details       []string `json:"details"`
+	RiskLevel     string   `json:"risk_level"`
+}
+
+// calculateRiskLevel determines the overall risk level with details
 func calculateRiskLevel(audit *auditor.AuditResult) string {
-	criticalCount := 0
-	highRiskCount := 0
-	mediumRiskCount := 0
+	analysis := calculateDetailedRisk(audit)
+	return analysis.RiskLevel
+}
+
+// calculateDetailedRisk provides comprehensive risk analysis
+func calculateDetailedRisk(audit *auditor.AuditResult) *RiskAnalysis {
+	analysis := &RiskAnalysis{
+		Details: []string{},
+	}
 
 	// Check vulnerabilities
 	for _, vuln := range audit.Vulnerabilities {
 		if vuln.Score >= 9.0 {
-			criticalCount++
+			analysis.CriticalCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("Critical vulnerability: %s (CVE: %s)", vuln.Description, vuln.CVE))
 		} else if vuln.Score >= 7.0 {
-			highRiskCount++
+			analysis.HighCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("High risk vulnerability: %s", vuln.Description))
 		} else if vuln.Score >= 4.0 {
-			mediumRiskCount++
+			analysis.MediumCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk vulnerability: %s", vuln.Description))
+		} else {
+			analysis.LowCount++
 		}
 	}
 
@@ -121,43 +155,93 @@ func calculateRiskLevel(audit *auditor.AuditResult) string {
 		if exploit.Success {
 			switch exploit.Severity {
 			case "Critical":
-				criticalCount++
+				analysis.CriticalCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Critical exploit: %s on port %d", exploit.ExploitName, exploit.Port))
 			case "High":
-				highRiskCount++
+				analysis.HighCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("High risk exploit: %s on port %d", exploit.ExploitName, exploit.Port))
 			case "Medium":
-				mediumRiskCount++
+				analysis.MediumCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk exploit: %s on port %d", exploit.ExploitName, exploit.Port))
+			default:
+				analysis.LowCount++
 			}
 		}
 	}
 
 	// Check database results
 	for _, db := range audit.DatabaseResults {
-		if db.Accessible && db.Severity == "Critical" {
-			criticalCount++
-		} else if db.Accessible && db.Severity == "High" {
-			highRiskCount++
+		if db.Accessible {
+			switch db.Severity {
+			case "Critical":
+				analysis.CriticalCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Critical: %s database exposed on port %d", db.Service, db.Port))
+			case "High":
+				analysis.HighCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("High risk: %s database accessible on port %d", db.Service, db.Port))
+			case "Medium":
+				analysis.MediumCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk: %s database issue on port %d", db.Service, db.Port))
+			default:
+				analysis.LowCount++
+			}
 		}
 	}
 
 	// Check web app results
 	for _, web := range audit.WebAppResults {
-		if web.Severity == "Critical" {
-			criticalCount++
-		} else if web.Severity == "High" {
-			highRiskCount++
-		} else if web.Severity == "Medium" {
-			mediumRiskCount++
+		switch web.Severity {
+		case "Critical":
+			analysis.CriticalCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("Critical web issue: %s on port %d", web.Issue, web.Port))
+		case "High":
+			analysis.HighCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("High risk web issue: %s on port %d", web.Issue, web.Port))
+		case "Medium":
+			analysis.MediumCount++
+			analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk web issue: %s on port %d", web.Issue, web.Port))
+		default:
+			analysis.LowCount++
 		}
 	}
 
-	if criticalCount > 0 {
-		return "Critical"
-	} else if highRiskCount > 0 {
-		return "High"
-	} else if mediumRiskCount > 0 || len(audit.Misconfigs) > 2 {
-		return "Medium"
+	// Check system results
+	for _, sys := range audit.SystemResults {
+		for _, finding := range sys.Findings {
+			switch sys.Severity {
+			case "Critical":
+				analysis.CriticalCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Critical system issue: %s", finding))
+			case "High":
+				analysis.HighCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("High risk system issue: %s", finding))
+			case "Medium":
+				analysis.MediumCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk system issue: %s", finding))
+			default:
+				analysis.LowCount++
+			}
+		}
 	}
-	return "Low"
+
+	// Check misconfigurations
+	for _, misconfig := range audit.Misconfigs {
+		analysis.MediumCount++
+		analysis.Details = append(analysis.Details, fmt.Sprintf("Configuration issue: %s", misconfig))
+	}
+
+	// Determine overall risk level
+	if analysis.CriticalCount > 0 {
+		analysis.RiskLevel = "Critical"
+	} else if analysis.HighCount > 0 {
+		analysis.RiskLevel = "High"
+	} else if analysis.MediumCount > 0 || len(audit.Misconfigs) > 2 {
+		analysis.RiskLevel = "Medium"
+	} else {
+		analysis.RiskLevel = "Low"
+	}
+
+	return analysis
 }
 
 // SaveAsJSON saves the report in JSON format

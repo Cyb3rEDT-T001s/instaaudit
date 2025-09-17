@@ -1,37 +1,53 @@
 # InstaAudit Docker Image
 FROM golang:1.21-alpine AS builder
 
-# Install dependencies
-RUN apk add --no-cache git
+# Install build dependencies
+RUN apk add --no-cache git make
 
 # Set working directory
 WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN go mod tidy && \
-    go build -o instaaudit cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o instaaudit cmd/main.go
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install runtime dependencies
+RUN apk --no-cache add ca-certificates nmap curl openssl
 
-WORKDIR /root/
+# Create non-root user
+RUN adduser -D -s /bin/sh instaaudit
 
-# Copy the binary from builder stage
+# Set working directory
+WORKDIR /home/instaaudit
+
+# Copy binary from builder
 COPY --from=builder /app/instaaudit .
 
-# Make it executable
-RUN chmod +x instaaudit
+# Copy documentation
+COPY --from=builder /app/*.md ./docs/
 
-# Expose no ports (tool makes outbound connections only)
+# Change ownership
+RUN chown -R instaaudit:instaaudit /home/instaaudit
+
+# Switch to non-root user
+USER instaaudit
+
+# Expose common ports for web interface (if added later)
+EXPOSE 8080
 
 # Set entrypoint
 ENTRYPOINT ["./instaaudit"]
 
-# Default help command
+# Default command
 CMD ["--help"]
