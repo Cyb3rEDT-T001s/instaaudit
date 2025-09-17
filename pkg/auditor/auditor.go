@@ -12,7 +12,7 @@ import (
 	"github.com/Cyb3rEDT-T001s/instaaudit/pkg/webapp"
 )
 
-// Vulnerability represents a security vulnerability
+// Vulnerability found during scan
 type Vulnerability struct {
 	CVE         string  `json:"cve"`
 	Description string  `json:"description"`
@@ -20,14 +20,14 @@ type Vulnerability struct {
 	Score       float64 `json:"score"`
 }
 
-// ServiceInfo represents information about a detected service
+// ServiceInfo for detected services
 type ServiceInfo struct {
 	Port    int    `json:"port"`
 	Service string `json:"service"`
 	Version string `json:"version,omitempty"`
 }
 
-// AuditResult contains the results of security auditing
+// AuditResult holds all scan results
 type AuditResult struct {
 	Host            string                     `json:"host"`
 	Services        []ServiceInfo              `json:"services"`

@@ -61,14 +61,14 @@ func main() {
 }
 
 func runAudit(cmd *cobra.Command, args []string) {
-	// Load configuration
+	// Load config
 	cfg, err := config.LoadConfig(configFile)
 	if err != nil {
 		log.Printf("Warning: Could not load config file: %v", err)
 		cfg = config.DefaultConfig()
 	}
 
-	// Override config with command line flags
+	// Apply command flags
 	if timeout > 0 {
 		cfg.Timeout = time.Duration(timeout) * time.Second
 	}
@@ -82,7 +82,7 @@ func runAudit(cmd *cobra.Command, args []string) {
 	cfg.SkipRecon = skipRecon
 	cfg.Aggressive = aggressive
 
-	// Parse ports
+	// Set target ports
 	var targetPorts []int
 	if ports == "" || ports == "common" {
 		targetPorts = scanner.GetCommonPorts()
@@ -99,12 +99,12 @@ func runAudit(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println(strings.Repeat("=", 60))
 
-	// Perform port scan
+	// Start port scan
 	fmt.Printf("🔎 Scanning %d ports...\n", len(targetPorts))
 	scanResult := scanner.ScanPorts(host, targetPorts, cfg.Timeout)
 	fmt.Printf("✅ Port scan complete. Found %d open ports: %v\n", len(scanResult.OpenPorts), scanResult.OpenPorts)
 
-	// Perform comprehensive security audit
+	// Run security audit
 	fmt.Println("🛡️  Performing comprehensive security audit...")
 	
 	if cfg.SkipExploits {
@@ -119,22 +119,22 @@ func runAudit(cmd *cobra.Command, args []string) {
 
 	auditResult := auditor.PerformAudit(host, scanResult.OpenPorts)
 
-	// Generate comprehensive report
+	// Create report
 	fmt.Println("📊 Generating comprehensive report...")
 	auditReport := report.GenerateReport(scanResult, auditResult)
 
-	// Save report in requested format(s)
+	// Save report
 	if err := saveReport(auditReport, cfg.OutputPath, cfg.OutputFormat); err != nil {
 		log.Fatalf("Failed to save report: %v", err)
 	}
 
-	// Always generate educational report for beginners
+	// Create beginner guide
 	fmt.Println("📚 Generating educational report for beginners...")
 	if err := report.GenerateEducationalReport(auditReport, cfg.OutputPath); err != nil {
 		log.Printf("Warning: Could not generate educational report: %v", err)
 	}
 
-	// Print executive summary
+	// Show summary
 	printExecutiveSummary(auditReport)
 }
 
@@ -145,7 +145,7 @@ func parsePorts(portStr string) []int {
 	for _, part := range parts {
 		part = strings.TrimSpace(part)
 		if strings.Contains(part, "-") {
-			// Handle range (e.g., "80-90")
+			// Port range
 			rangeParts := strings.Split(part, "-")
 			if len(rangeParts) == 2 {
 				start, err1 := strconv.Atoi(strings.TrimSpace(rangeParts[0]))
@@ -157,7 +157,7 @@ func parsePorts(portStr string) []int {
 				}
 			}
 		} else {
-			// Handle single port
+			// Single port
 			if port, err := strconv.Atoi(part); err == nil {
 				ports = append(ports, port)
 			}
@@ -198,7 +198,7 @@ func printExecutiveSummary(auditReport *report.Report) {
 	fmt.Println("🔒 INSTAAUDIT EXECUTIVE SECURITY SUMMARY")
 	fmt.Println(strings.Repeat("=", 70))
 	
-	// Risk level with color coding
+	// Risk level
 	riskEmoji := getRiskEmoji(auditReport.Summary.RiskLevel)
 	fmt.Printf("🎯 Target: %s\n", auditReport.ScanResult.Host)
 	fmt.Printf("📅 Scan Date: %s\n", auditReport.Timestamp.Format("2006-01-02 15:04:05"))
@@ -219,18 +219,18 @@ func printExecutiveSummary(auditReport *report.Report) {
 	fmt.Printf("   • System Issues: %d\n", auditReport.Summary.SystemIssues)
 	fmt.Printf("   • Misconfigurations: %d\n", auditReport.Summary.Misconfigurations)
 
-	// Show critical findings
+	// Critical issues
 	if auditReport.Summary.RiskLevel == "Critical" || auditReport.Summary.RiskLevel == "High" {
 		fmt.Println("\n⚠️  CRITICAL ISSUES DETECTED:")
 		
-		// Database issues
+		// Database problems
 		for _, db := range auditReport.AuditResult.DatabaseResults {
 			if db.Accessible && (db.Severity == "Critical" || db.Severity == "High") {
 				fmt.Printf("   🔴 %s database accessible on port %d\n", db.Service, db.Port)
 			}
 		}
 		
-		// Successful exploits
+		// Exploit results
 		for _, exploit := range auditReport.AuditResult.ExploitResults {
 			if exploit.Success && (exploit.Severity == "Critical" || exploit.Severity == "High") {
 				fmt.Printf("   🔴 %s vulnerability on port %d\n", exploit.ExploitName, exploit.Port)
@@ -238,12 +238,12 @@ func printExecutiveSummary(auditReport *report.Report) {
 		}
 	}
 
-	// Show open ports
+	// Open ports
 	if len(auditReport.ScanResult.OpenPorts) > 0 {
 		fmt.Printf("\n🔓 Open Ports: %v\n", auditReport.ScanResult.OpenPorts)
 	}
 
-	// Show detected technologies
+	// Technologies found
 	if auditReport.AuditResult.ReconData != nil && len(auditReport.AuditResult.ReconData.Technologies) > 0 {
 		fmt.Printf("🔧 Technologies: %v\n", auditReport.AuditResult.ReconData.Technologies)
 	}
@@ -251,7 +251,7 @@ func printExecutiveSummary(auditReport *report.Report) {
 	fmt.Printf("\n📄 Reports saved to: %s.*\n", outputPath)
 	fmt.Println(strings.Repeat("=", 70))
 	
-	// Recommendations
+	// Action needed
 	if auditReport.Summary.RiskLevel == "Critical" || auditReport.Summary.RiskLevel == "High" {
 		fmt.Println("🚨 IMMEDIATE ACTION REQUIRED:")
 		fmt.Println("   • Review and secure database access")
