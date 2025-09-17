@@ -1,6 +1,8 @@
 @echo off
-echo InstaAudit GitHub Upload Script
-echo ================================
+setlocal enabledelayedexpansion
+
+echo InstaAudit GitHub Push and Cleanup Script
+echo ==========================================
 
 :: Check if Git is installed
 git --version >nul 2>&1
@@ -24,10 +26,10 @@ git add .
 
 :: Commit changes
 set /p commit_msg="Enter commit message (or press Enter for default): "
-if "%commit_msg%"=="" set commit_msg=Update InstaAudit project
+if "!commit_msg!"=="" set commit_msg=Update InstaAudit project with Termux support
 
 echo Committing changes...
-git commit -m "%commit_msg%"
+git commit -m "!commit_msg!"
 
 :: Check if remote exists
 git remote get-url origin >nul 2>&1
@@ -49,15 +51,32 @@ if errorlevel 1 (
     echo.
     echo To fix authentication, run: git config --global user.name "Your Name"
     echo And: git config --global user.email "your.email@example.com"
+    echo.
+    echo Script will NOT be deleted due to upload failure.
     pause
     exit /b 1
 )
 
 echo.
-echo Success! Your project has been uploaded to GitHub.
-echo You can view it at your repository URL.
+echo ========================================
+echo SUCCESS! Project uploaded to GitHub
+echo ========================================
+echo.
+echo Files uploaded:
+echo - InstaAudit source code
+echo - Termux installation scripts
+echo - Documentation and guides
+echo - Build scripts for all platforms
+echo.
+echo The upload script will self-delete in 3 seconds...
+timeout /t 3 /nobreak >nul
 
-:: Self-delete after successful upload
-echo Cleaning up upload script...
-timeout /t 2 /nobreak >nul
-del "%~f0"
+:: Create a temporary batch file to delete this script
+echo @echo off > temp_cleanup.bat
+echo timeout /t 1 /nobreak ^>nul >> temp_cleanup.bat
+echo del "%~nx0" >> temp_cleanup.bat
+echo del "%%~f0" >> temp_cleanup.bat
+
+:: Run the cleanup script and exit
+start /b temp_cleanup.bat
+exit

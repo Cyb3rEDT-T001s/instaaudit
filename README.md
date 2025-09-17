@@ -54,6 +54,15 @@ chmod +x install-unix.sh
 ./install-unix.sh
 ```
 
+#### **Termux (Android) Users:**
+```bash
+# Install from Termux
+git clone https://github.com/Cyb3rEDT-T001s/instaaudit.git
+cd instaaudit
+chmod +x install-termux.sh
+./install-termux.sh
+```
+
 #### **Docker Users:**
 ```bash
 git clone https://github.com/Cyb3rEDT-T001s/instaaudit.git
