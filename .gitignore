@@ -7,12 +7,12 @@ instaaudit-*
 *.exe
 
 # Reports (generated during scans)
-audit_report.*
+audit_report*
+*_educational.*
+*_explained.*
 reports/
-*.json
-*.csv
-*.html
-*.txt
+scan_*
+scans/
 
 # Go build artifacts
 *.o
@@ -26,8 +26,8 @@ go.work
 # Dependency directories
 vendor/
 
-# Go module cache
-go.sum
+# Go module cache (keep go.sum for Docker builds)
+# go.sum
 
 # IDE files
 .vscode/
@@ -70,3 +70,17 @@ git-update.bat
 git-update.sh
 update-repo.bat
 update-repo.sh
+fix-docker.bat
+fix-docker.sh
+
+# Build artifacts
+build/
+dist/
+*.deb
+*.rpm
+*.pkg
+
+# Backup files
+*.bak
+*.backup
+*~
