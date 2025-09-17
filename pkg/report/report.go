@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Cyb3rEDT-T001s/instaaudit/pkg/auditor"
@@ -190,18 +191,20 @@ func calculateDetailedRisk(audit *auditor.AuditResult) *RiskAnalysis {
 
 	// Check web app results
 	for _, web := range audit.WebAppResults {
-		switch web.Severity {
-		case "Critical":
-			analysis.CriticalCount++
-			analysis.Details = append(analysis.Details, fmt.Sprintf("Critical web issue: %s on port %d", web.Issue, web.Port))
-		case "High":
-			analysis.HighCount++
-			analysis.Details = append(analysis.Details, fmt.Sprintf("High risk web issue: %s on port %d", web.Issue, web.Port))
-		case "Medium":
-			analysis.MediumCount++
-			analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk web issue: %s on port %d", web.Issue, web.Port))
-		default:
-			analysis.LowCount++
+		if len(web.Warnings) > 0 {
+			switch web.Severity {
+			case "Critical":
+				analysis.CriticalCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Critical web issue: %s on port %d", strings.Join(web.Warnings, ", "), web.Port))
+			case "High":
+				analysis.HighCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("High risk web issue: %s on port %d", strings.Join(web.Warnings, ", "), web.Port))
+			case "Medium":
+				analysis.MediumCount++
+				analysis.Details = append(analysis.Details, fmt.Sprintf("Medium risk web issue: %s on port %d", strings.Join(web.Warnings, ", "), web.Port))
+			default:
+				analysis.LowCount++
+			}
 		}
 	}
 

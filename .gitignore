@@ -68,3 +68,5 @@ push-and-cleanup.bat
 temp_cleanup.bat
 git-update.bat
 git-update.sh
+update-repo.bat
+update-repo.sh
