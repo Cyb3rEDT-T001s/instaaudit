@@ -1,0 +1,78 @@
+name: Build InstaAudit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        
+    - name: Install dependencies
+      run: go mod tidy
+      
+    - name: Run tests
+      run: go test -v ./...
+      
+    - name: Build for Linux
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        GOOS=linux GOARCH=amd64 go build -o instaaudit-linux cmd/main.go
+        chmod +x instaaudit-linux
+        
+    - name: Build for Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        go build -o instaaudit.exe cmd/main.go
+        
+    - name: Build for macOS
+      if: matrix.os == 'macos-latest'
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -o instaaudit-macos cmd/main.go
+        chmod +x instaaudit-macos
+        
+    - name: Upload Linux Binary
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: instaaudit-linux
+        path: instaaudit-linux
+        
+    - name: Upload Windows Binary
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: instaaudit-windows
+        path: instaaudit.exe
+        
+    - name: Upload macOS Binary
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: instaaudit-macos
+        path: instaaudit-macos
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Docker image
+      run: |
+        docker build -t instaaudit:latest .
+        docker run --rm instaaudit:latest --help

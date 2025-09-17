@@ -1,0 +1,66 @@
+# InstaAudit .gitignore
+
+# Binaries
+instaaudit
+instaaudit.exe
+instaaudit-*
+*.exe
+
+# Reports (generated during scans)
+audit_report.*
+reports/
+*.json
+*.csv
+*.html
+*.txt
+
+# Go build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Dependency directories
+vendor/
+
+# Go module cache
+go.sum
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Docker
+.dockerignore
+
+# Local configuration
+config.local.*
+*.local
+
+# Test files
+test_*
+*_test.go.bak
+
+# Deployment scripts (auto-deleted after use)
+deploy.bat
+clean-history.bat
